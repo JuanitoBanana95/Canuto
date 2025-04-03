@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description" content="FLDSMDFR: Flujo de Liquidez y Dinero - Gestiona tus finanzas personales con saldos, movimientos y ajustes en tiempo real. Una herramienta intuitiva para controlar ingresos, egresos y cambios de moneda.">
+    <meta name="keywords" content="gestión financiera, finanzas personales, control de gastos, ingresos y egresos, cambio de moneda, FLDSMDFR">
+    <meta name="author" content="xAI">
+    <meta name="robots" content="index, follow">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>FLDSMDFR - Gestión Financiera 3.0</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="/favicon.png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js" integrity="sha512-GWzVrcGlo0TxTRvz9ttioyYJ+Wwk9Ck0G81D+eO63BaqHaJ3YZX9wuqjwgfcV/MrB2PhaVX9DkYVhbFpStnqpQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</head>
+<body class="dark-mode">
+    <div class="app-container">
+        <div id="sidebarOverlay" class="sidebar-overlay"></div>
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h2>FLDSMDFR</h2>
+                <button class="close-sidebar" aria-label="Cerrar menú">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <ul class="sidebar-menu">
+                <li class="menu-item active" data-section="dashboard">
+                    <i class="fas fa-chart-line"></i> Dashboard
+                </li>
+                <li class="menu-item" data-section="movements">
+                    <i class="fas fa-exchange-alt"></i> Movimientos
+                </li>
+                <li class="menu-item" data-section="settings">
+                    <i class="fas fa-cog"></i> Ajustes
+                </li>
+            </ul>                                
+               
+                <div class="bitcoin-price">
+                <h3>Bitcoin Price</h3>
+                <span id="bitcoinPrice">Cargando...</span>
+                </div>
+
+            <div class="sidebar-footer">
+
+                <button class="theme-switch" aria-label="Cambiar tema">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="help-btn" aria-label="Ayuda">
+                    <i class="fas fa-question-circle"></i>
+                </button>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <div class="quick-actions">
+                <button class="menu-toggle" aria-label="Abrir/Cerrar menú">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <button id="addMovementBtn" class="add-movement-btn" aria-label="Agregar movimiento">
+                    <i class="fas fa-plus"></i> Nuevo
+                </button>
+                
+                <div class="actions-group">
+                    <button class="action-btn" aria-label="Deshacer">
+                        <i class="fas fa-undo"></i>
+                    </button>
+                    <button class="action-btn" aria-label="Rehacer">
+                        <i class="fas fa-redo"></i>
+                    </button>
+                    <button class="action-btn" id="exportBtn" aria-label="Exportar">
+                        <i class="fas fa-download"></i>
+                    </button>
+                    <button class="action-btn" aria-label="Importar">
+                        <i class="fas fa-upload"></i>
+                    </button>
+                    <input type="file" id="importFile" accept=".json,.csv,.pdf" style="display: none;">
+                    <button class="action-btn" id="toggleBitcoinView" aria-label="Ver en Bitcoin">
+                        <i class="fab fa-bitcoin"></i>
+                    </button>
+                    <button class="action-btn" aria-label="Borrar todo">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+            </div>
+
+            <section id="dashboard" class="content-section active">
+                <div class="dashboard-header">
+                    <h1>Resumen Financiero</h1>
+                </div>
+                <div class="balances-container">
+                    <div class="balances-grid accounts-grid" id="accountsSummary"></div>
+                    <div class="totals-separator">
+                        <h2>Totales por Moneda</h2>
+                    </div>
+                    <div class="balances-grid totals-grid" id="totalsSummary"></div>
+                    <div class="totals-separator">
+                        <h2>Movimientos por Moneda</h2>
+                    </div>
+                    <div class="balances-grid summary-grid" id="movementSummary"></div>
+                </div>
+            </section>
+
+            <section id="movements" class="content-section">
+                <div class="movements-header">
+                    <h1>Movimientos</h1>
+                </div>
+                <div class="filters-container">
+                    <button class="filter-toggle">Filtros <i class="fas fa-filter"></i></button>
+                    <div id="filtersBar" class="filters-bar">
+                        <select id="filterType">
+                            <option value="">Tipo</option>
+                            <option value="ingreso">Ingreso</option>
+                            <option value="egreso">Egreso</option>
+                            <option value="cambio">Cambio</option>
+                            <option value="ajuste">Ajuste</option>
+                        </select>
+                        <select id="filterCategory"></select>
+                        <select id="filterAccount"></select>
+                        <input type="date" id="filterDateFrom" placeholder="Desde">
+                        <input type="date" id="filterDateTo" placeholder="Hasta">
+                        <input type="number" id="filterAmountMin" placeholder="Monto mín." step="0.01">
+                        <input type="number" id="filterAmountMax" placeholder="Monto máx." step="0.01">
+                        <input type="text" id="filterDescription" placeholder="Descripción">
+                        <select id="filterSort">
+                            <option value="load-order" selected>Orden de carga</option>
+                            <option value="date-desc">Más reciente primero</option>
+                            <option value="date-asc">Más antiguo primero</option>
+                            <option value="amount-desc">Mayor monto</option>
+                            <option value="amount-asc">Menor monto</option>
+                        </select>
+                        <button id="applyFilters" class="apply-btn">Aplicar</button>
+                    </div>
+                </div>
+                <div class="movements-list" id="financeBody"></div>
+            </section>
+
+            <section id="settings" class="content-section">
+                <h1>Ajustes</h1>
+                <div class="settings-grid">
+                    <div class="settings-card">
+                        <h3>Cuentas</h3>
+                        <div id="accountsList" class="settings-list"></div>
+                        <form id="addAccountForm" class="settings-form">
+                            <input type="text" id="accountName" placeholder="Nueva cuenta" maxlength="14" required>
+                            <select id="accountCurrency" required>
+                                <option value="">Moneda</option>
+                                <option value="Bitcoin">Bitcoin</option>
+                                <option value="Dólares">Dólares</option>
+                                <option value="Pesos">Pesos</option>
+                                <option value="Euros">Euros</option>
+                            </select>
+                            <button type="submit"><i class="fas fa-plus"></i></button>
+                        </form>
+                    </div>
+                    <div class="settings-card">
+                        <h3>Egresos</h3>
+                        <div id="expenseCategoriesList" class="settings-list"></div>
+                        <form id="addExpenseCategoryForm" class="settings-form">
+                            <input type="text" id="expenseCategoryName" placeholder="Nueva categoría" required>
+                            <select id="expenseCategoryCurrency" required>
+                                <option value="">Moneda</option>
+                                <option value="Bitcoin">Bitcoin</option>
+                                <option value="Dólares">Dólares</option>
+                                <option value="Pesos">Pesos</option>
+                                <option value="Euros">Euros</option>
+                            </select>
+                            <button type="submit"><i class="fas fa-plus"></i></button>
+                        </form>
+                    </div>
+                    <div class="settings-card">
+                        <h3>Ingresos</h3>
+                        <div id="incomeMotivesList" class="settings-list"></div>
+                        <form id="addIncomeMotiveForm" class="settings-form">
+                            <input type="text" id="incomeMotiveName" placeholder="Nuevo motivo" required>
+                            <select id="incomeMotiveCurrency" required>
+                                <option value="">Moneda</option>
+                                <option value="Bitcoin">Bitcoin</option>
+                                <option value="Dólares">Dólares</option>
+                                <option value="Pesos">Pesos</option>
+                                <option value="Euros">Euros</option>
+                            </select>
+                            <button type="submit"><i class="fas fa-plus"></i></button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <div id="movementModal" class="modal">
+                <div class="modal-content">
+                    <h2>Agregar Movimiento</h2>
+                    <form id="financeForm" class="movement-form">
+                        <input type="hidden" id="movementIndex" value="-1">
+                        <div class="form-group">
+                            <label for="movementType">Tipo</label>
+                            <select id="movementType">
+                                <option value="">Selecciona</option>
+                                <option value="ingreso">Ingreso</option>
+                                <option value="egreso">Egreso</option>
+                                <option value="cambio">Cambio</option>
+                                <option value="ajuste">Ajuste</option>
+                            </select>
+                            <label for="date">Fecha</label>
+                            <input type="date" id="date">
+                        </div>
+                        <div id="ingresoFields" class="field-group">
+                            <label for="currencyIngreso">Moneda</label>
+                            <select id="currencyIngreso">
+                                <option value="">Selecciona</option>
+                                <option value="Bitcoin">Bitcoin</option>
+                                <option value="Dólares">Dólares</option>
+                                <option value="Pesos">Pesos</option>
+                                <option value="Euros">Euros</option>
+                            </select>
+                            <label for="amountIngreso">Monto</label>
+                            <input type="number" id="amountIngreso" step="0.01" placeholder="Monto">
+                            <label for="accountIngreso">Cuenta</label>
+                            <select id="accountIngreso"></select>
+                            <label for="motive">Motivo</label>
+                            <select id="motive" disabled></select>
+                            <label for="descriptionIngreso" class="description-label">Descripción (opcional)</label>
+                            <input type="text" id="descriptionIngreso" placeholder="Descripción (opcional)">
+                        </div>
+                        <div id="egresoFields" class="field-group">
+                            <label for="currencyEgreso">Moneda</label>
+                            <select id="currencyEgreso">
+                                <option value="">Selecciona</option>
+                                <option value="Bitcoin">Bitcoin</option>
+                                <option value="Dólares">Dólares</option>
+                                <option value="Pesos">Pesos</option>
+                                <option value="Euros">Euros</option>
+                            </select>
+                            <label for="amountEgreso">Monto</label>
+                            <input type="number" id="amountEgreso" step="0.01" placeholder="Monto">
+                            <label for="accountEgreso">Cuenta</label>
+                            <select id="accountEgreso"></select>
+                            <label for="category">Categoría</label>
+                            <select id="category" disabled></select>
+                            <label for="descriptionEgreso" class="description-label">Descripción (opcional)</label>
+                            <input type="text" id="descriptionEgreso" placeholder="Descripción (opcional)">
+                        </div>
+                        <div id="cambioFields" class="field-group">
+                            <label for="currencyOrigen">Origen</label>
+                            <select id="currencyOrigen">
+                                <option value="">Selecciona</option>
+                                <option value="Bitcoin">Bitcoin</option>
+                                <option value="Dólares">Dólares</option>
+                                <option value="Pesos">Pesos</option>
+                                <option value="Euros">Euros</option>
+                            </select>
+                            <label for="accountOrigen">Cuenta Origen</label>
+                            <select id="accountOrigen"></select>
+                            <label for="amountOrigen">Monto</label>
+                            <input type="number" id="amountOrigen" placeholder="Monto" step="0.01">
+                            <label for="exchangeRate">Cambio</label>
+                            <input type="number" id="exchangeRate" placeholder="Cambio" step="0.01">
+                            <label for="currencyDest">Destino</label>
+                            <select id="currencyDest">
+                                <option value="">Selecciona</option>
+                                <option value="Bitcoin">Bitcoin</option>
+                                <option value="Dólares">Dólares</option>
+                                <option value="Pesos">Pesos</option>
+                                <option value="Euros">Euros</option>
+                            </select>
+                            <label for="amountDest">Calculado</label>
+                            <input type="number" id="amountDest" placeholder="Calculado" step="0.01" readonly>
+                            <label for="accountDest">Cuenta Destino</label>
+                            <select id="accountDest"></select>
+                        </div>
+                        <div id="ajusteFields" class="field-group">
+                            <label for="adjustAccount">Cuenta</label>
+                            <select id="adjustAccount"></select>
+                            <label for="adjustAmount">Ajuste</label>
+                            <input type="number" id="adjustAmount" placeholder="+/-" step="0.01">
+                        </div>
+                        <div class="form-controls">
+                            <button type="submit" id="addMovementSubmit" class="submit-btn">
+                                <i class="fas fa-check"></i> Guardar
+                            </button>
+                            <button type="button" id="closeMovementBtn" class="cancel-btn">
+                                <i class="fas fa-times"></i> Cancelar
+                            </button>
+                            <span id="errorMessage" class="error-text"></span>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div id="historyModal" class="modal">
+                <div class="modal-content">
+                    <h2 id="modalTitle"></h2>
+                    <canvas id="historyChart"></canvas>
+                    <div id="historyBody"></div>
+                    <button type="button" id="closeHistoryBtn">Cerrar</button>
+                </div>
+            </div>
+
+            <div id="helpModal" class="modal">
+                <div class="modal-content">
+                    <h2>Ayuda - FLDSMDFR</h2>
+                    <p><strong>FLDSMDFR</strong> (Flujo de Liquidez y Dinero: Saldos, Movimientos, Deslices en Finanzas y su Registro) es una herramienta avanzada para gestionar tus finanzas personales de manera sencilla y efectiva.</p>
+                    <h3>¿Cómo usarlo?</h3>
+                    <ul>
+                        <li><strong>Dashboard</strong>: Visualiza tus saldos por cuenta y totales por moneda. Haz clic en una cuenta para ver su historial detallado con gráficos.</li>
+                        <li><strong>Movimientos</strong>: Registra ingresos, egresos, cambios de moneda o ajustes manuales desde el botón "Nuevo". Usa los filtros para buscar movimientos específicos por tipo, cuenta, fecha, monto o descripción.</li>
+                        <li><strong>Ajustes</strong>: Configura tus cuentas, categorías de egresos y motivos de ingresos.</li>
+                        <li><strong>Acciones rápidas</strong>:
+                            <ul>
+                                <li><i class="fas fa-plus"></i> Agregar movimiento.</li>
+                                <li><i class="fas fa-undo"></i> Deshacer última acción.</li>
+                                <li><i class="fas fa-redo"></i> Rehacer acción deshecha.</li>
+                                <li><i class="fas fa-download"></i> Exportar datos en JSON, CSV o PDF.</li>
+                                <li><i class="fas fa-upload"></i> Importar datos desde JSON, CSV o PDF.</li>
+                                <li><i class="fas fa-trash-alt"></i> Borrar todos los datos (¡cuidado!).</li>
+                                <li><i class="fab fa-bitcoin"></i> Alternar vista de saldos en Bitcoin.</li>
+                            </ul>
+                        </li>
+                        <li><strong>Tema</strong>: Cambia entre modo oscuro, claro y Bitcoin con el botón <i class="fas fa-moon"></i> en la barra lateral.</li>
+                    </ul>
+                    <h3>Consejos</h3>
+                    <ul>
+                        <li>Usa descripciones para recordar detalles de tus movimientos.</li>
+                        <li>Revisa los totales por moneda para un control global.</li>
+                        <li>Exporta regularmente tus datos como respaldo. Cualquier recarga de página borra todos los datos, por tu privacidad.</li>
+                    </ul>
+                    <button type="button" id="closeHelpBtn">Cerrar</button>
+                </div>
+            </div>
+
+            <div id="notificationModal" class="modal">
+                <div class="modal-content">
+                    <h2>Notificación</h2>
+                    <p id="notificationMessage"></p>
+                    <div class="form-controls">
+                        <button type="button" id="notificationConfirm" class="submit-btn">
+                            <i class="fas fa-check"></i> Aceptar
+                        </button>
+                        <button type="button" id="notificationCancel" class="cancel-btn" style="display: none;">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="exportModal" class="modal">
+                <div class="modal-content">
+                    <h2>Exportar Datos</h2>
+                    <p>Selecciona el formato para exportar tus datos:</p>
+                    <div class="form-controls">
+                        <button type="button" id="exportCSV" class="submit-btn">CSV</button>
+                        <button type="button" id="exportJSON" class="submit-btn">JSON</button>
+                        <button type="button" id="exportPDF" class="submit-btn">PDF</button>
+                        <button type="button" id="closeExportBtn" class="cancel-btn">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nuevo modal para el tipo de cambio de Bitcoin -->
+            <div id="bitcoinRateModal" class="modal">
+                <div class="modal-content">
+                    <h2>Tipo de Cambio ARS/USD</h2>
+                    <p>Ingresa el tipo de cambio actual de Pesos Argentinos a Dólares (ejemplo: 1000):</p>
+                    <form id="bitcoinRateForm" class="movement-form">
+                        <div class="form-group">
+                            <label for="arsUsdRate">ARS/USD</label>
+                            <input type="number" id="arsUsdRate" step="0.01" placeholder="1000" required>
+                        </div>
+                        <div class="form-controls">
+                            <button type="submit" id="bitcoinRateSubmit" class="submit-btn">
+                                <i class="fas fa-check"></i> Guardar
+                            </button>
+                            <button type="button" id="bitcoinRateCancel" class="cancel-btn">
+                                <i class="fas fa-times"></i> Cancelar
+                            </button>
+                            <span id="bitcoinRateError" class="error-text"></span>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+    <script type="module" src="main.js"></script>
+</body>
+</html>
